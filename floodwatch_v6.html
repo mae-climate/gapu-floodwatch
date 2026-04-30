@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FloodWatch — Kg. Sarapung-Kolopis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0ece4;--bg3:#ede9e0;--card:#ffffff;--text:#1c1c1c;--muted:#6b6457;
+  --subtle:#9e9588;--border:#d8d3c8;--shadow:0 1px 4px rgba(0,0,0,.09);
+  --font:'Noto Sans',sans-serif;--mono:'Noto Sans Mono',monospace;
+  --c-green:#2e7d32;--bg-green:#e8f5e9;
+  --c-yellow:#e65100;--bg-yellow:#fff3e0;
+  --c-orange:#bf360c;--bg-orange:#fbe9e7;
+  --c-red:#b71c1c;--bg-red:#ffebee;
+  --did-light:#388e3c;--did-mod:#f9a825;--did-heavy:#e65100;--did-vh:#b71c1c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;
+     line-height:1.5;min-height:100vh;padding:14px;max-width:500px;margin:0 auto}
+.hdr{background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+     box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center}
+.hdr h1{font-size:1.35rem;font-weight:700}
+.hdr p{font-size:.75rem;color:var(--muted);margin-top:1px}
+.hdr-r{text-align:right}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c-green);
+     margin-right:3px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+time{font-family:var(--mono);font-size:.68rem;color:var(--muted);display:block}
+.card{background:var(--card);border-radius:12px;padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow)}
+.card-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;
+            color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card-sub{font-size:.68rem;color:var(--subtle);font-weight:400;text-transform:none;letter-spacing:0}
+.risk-card{background:var(--card);border-radius:12px;padding:16px 18px;margin-bottom:10px;
+           box-shadow:var(--shadow);border-left:5px solid var(--rc)}
+.rpill{font-size:.72rem;font-weight:700;letter-spacing:1.5px;padding:3px 10px;border-radius:20px;
+       border:1.5px solid var(--rc);color:var(--rc);background:var(--rbg);text-transform:uppercase}
+.rhead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.rbm{font-size:.88rem;color:var(--muted)}
+.big-num{font-family:var(--mono);font-size:3.8rem;font-weight:700;line-height:1}
+.big-unit{font-size:1rem;color:var(--muted)}
+.acc-desc{font-size:.8rem;color:var(--muted);margin-bottom:12px}
+.acc-desc strong{color:var(--text)}
+.prog-track{height:10px;border-radius:5px;background:var(--bg3);margin-bottom:4px}
+.prog-fill{height:100%;border-radius:5px;max-width:100%;transition:width .7s ease}
+.tick-row{display:flex;position:relative;height:14px;margin-bottom:10px}
+.tick{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:.6rem;font-weight:600}
+.act-box{border-radius:8px;padding:11px 13px}
+.act-title{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:5px}
+.act-en{font-size:.85rem;margin-bottom:3px}
+.act-bm{font-size:.78rem;color:var(--muted);font-style:italic}
+.stats-g{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.stat{background:var(--card);border-radius:10px;padding:11px 8px;text-align:center;
+      box-shadow:var(--shadow);border:1px solid var(--border)}
+.sval{font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--text);line-height:1}
+.sunit{font-size:.62rem;color:var(--muted)}
+.slbl{font-size:.66rem;color:var(--muted);margin-top:3px;line-height:1.3}
+.snote{font-size:.58rem;color:var(--subtle);margin-top:1px;font-style:italic}
+.int-row{background:var(--card);border-radius:10px;padding:11px 13px;margin-bottom:10px;
+         box-shadow:var(--shadow);border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.int-val{font-family:var(--mono);font-size:1.4rem;font-weight:700}
+.int-lbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.int-unit{font-size:.65rem;color:var(--muted)}
+.int-right{text-align:right;max-width:55%}
+.int-cat{font-size:.82rem;font-weight:700}
+.did-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.did-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff}
+.sig{background:#fff8e1;border:1.5px solid #f9a825;border-radius:10px;
+     padding:11px 13px;margin-bottom:10px;font-size:.82rem}
+.sig-title{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#e65100;margin-bottom:3px}
+.g24{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.fc{background:var(--bg3);border-radius:8px;padding:8px 5px;text-align:center;border:1px solid var(--border)}
+.fc-t{font-size:.6rem;color:var(--muted);font-family:var(--mono)}
+.fc-v{font-family:var(--mono);font-size:1.25rem;font-weight:700;color:var(--text)}
+.fc-u{font-size:.52rem;color:var(--muted)}
+.fc-b{height:4px;border-radius:2px;margin-top:5px}
+.fc-c{font-size:.58rem;font-weight:700;margin-top:2px}
+/* ── Chart container ── */
+.toggle-row{display:flex;gap:6px;margin-bottom:8px}
+.tbtn{flex:1;padding:7px 4px;border:1.5px solid var(--border);border-radius:6px;
+      background:var(--bg3);color:var(--muted);font-family:var(--font);font-size:.7rem;
+      font-weight:700;cursor:pointer;text-transform:uppercase;transition:all .15s}
+.tbtn.active{background:var(--text);color:#fff;border-color:var(--text)}
+/* Two-canvas chart: sticky y-axis + scrolling data */
+.chart-wrap{position:relative;display:flex;overflow-x:auto;overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;border-radius:4px}
+.chart-wrap::-webkit-scrollbar{height:5px}
+.chart-wrap::-webkit-scrollbar-track{background:var(--bg3);border-radius:3px}
+.chart-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.yaxis-sticky{position:sticky;left:0;flex-shrink:0;z-index:4;background:var(--card)}
+#yaxis-canvas{display:block}
+#main-chart{display:block;flex-shrink:0;cursor:crosshair}
+/* Tooltip */
+#tt{position:fixed;display:none;z-index:9999;background:var(--card);border:1.5px solid var(--border);
+    border-radius:10px;padding:9px 13px;box-shadow:0 4px 16px rgba(0,0,0,.15);
+    pointer-events:none;min-width:110px;max-width:160px}
+#tt .tt-date{font-size:.65rem;color:var(--muted);margin-bottom:3px;font-weight:600}
+#tt .tt-val{font-family:var(--mono);font-size:1.4rem;font-weight:700;line-height:1}
+#tt .tt-cat{font-size:.7rem;font-weight:700;margin-top:2px}
+#tt .tt-sub{font-size:.62rem;color:var(--muted);margin-top:1px}
+/* Misc */
+.wl-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.wl-row:last-child{border-bottom:none}
+.wl-name{flex:1;font-size:.82rem;font-weight:700}
+.wl-sub{font-size:.68rem;color:var(--muted)}
+.wl-link{display:inline-block;padding:6px 12px;background:var(--bg3);border:1.5px solid var(--border);
+         border-radius:6px;font-size:.72rem;font-weight:700;color:var(--text);text-decoration:none}
+.wl-link:hover{background:var(--text);color:#fff}
+.th-row{display:grid;grid-template-columns:88px 1fr;gap:8px;padding:9px 0;
+        border-bottom:1px solid var(--border);align-items:start}
+.th-row:last-child{border-bottom:none}
+.th-pill{padding:4px 7px;border-radius:6px;font-size:.62rem;font-weight:700;letter-spacing:1px;text-align:center}
+.th-range{font-family:var(--mono);font-size:.78rem;font-weight:700;margin-bottom:1px}
+.th-en{font-size:.7rem;color:var(--muted)}
+.th-bm{font-size:.66rem;color:var(--subtle);font-style:italic}
+.refresh{width:100%;padding:11px;background:var(--bg3);border:1.5px solid var(--border);
+         border-radius:8px;color:var(--muted);font-family:var(--font);font-size:.8rem;
+         font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;
+         margin-bottom:10px;transition:all .15s}
+.refresh:hover{background:var(--text);color:#fff;border-color:var(--text)}
+.caveat{background:var(--card);border-radius:10px;padding:13px 15px;font-size:.7rem;
+        color:var(--muted);line-height:1.75;box-shadow:var(--shadow)}
+.caveat strong{color:var(--text)}
+.loading{background:var(--card);border-radius:12px;padding:40px 20px;text-align:center;box-shadow:var(--shadow)}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--c-green);
+         border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- Global tooltip (position:fixed, above everything) -->
+<div id="tt">
+  <div class="tt-date" id="tt-date"></div>
+  <div><span class="tt-val" id="tt-val"></span><span style="font-size:.7rem;color:var(--muted)" id="tt-unit"></span></div>
+  <div class="tt-cat" id="tt-cat"></div>
+  <div class="tt-sub" id="tt-sub"></div>
+</div>
+
+<div class="hdr">
+  <div><h1>🌧 FloodWatch</h1><p>Kg. Sarapung-Kolopis · Penampang, Sabah</p></div>
+  <div class="hdr-r">
+    <span class="dot"></span>
+    <time id="t-time">–</time>
+    <time id="t-date">–</time>
+  </div>
+</div>
+
+<div id="app">
+  <div class="loading"><div class="spinner"></div>
+    <p style="color:var(--muted);font-size:.85rem">Memuatkan data…<br><small>Fetching rainfall data…</small></p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════
+const CFG = {
+  lat: 5.9257, lon: 116.1433,
+  T: { watch:70, warning:100, alert:120, maxBar:200 },
+  DAILY_REFS: [
+    { mm:20,  label:'Avg rainy day',    color:'#388e3c', dash:[4,3] },
+    { mm:60,  label:'Heavy (MetMY)',    color:'#e65100', dash:[5,3] },
+    { mm:100, label:'Extreme',          color:'#b71c1c', dash:[6,3] },
+  ]
+};
+
+// Chart geometry constants — SHARED between both canvases so grid lines align
+const CP = {
+  H:   210,   // display height (px)
+  pT:  10,    // top padding
+  pB:  56,    // bottom padding (for rotated labels)
+  YW:  42,    // y-axis canvas display width
+  DPL: 6,     // data canvas left padding (no labels here)
+  DPR: 10,    // data canvas right padding
+  BAR: 26,    // min px per bar/day
+};
+const cH = () => CP.H - CP.pT - CP.pB;
+const yP = (v, maxV) => CP.pT + cH() * (1 - v/maxV);
+
+// ══════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════
+const RISK = {
+  green:  {label:'NORMAL',  bm:'Biasa',     c:'var(--c-green)',  bg:'var(--bg-green)',  hex:'#2e7d32'},
+  yellow: {label:'WATCH',   bm:'Perhatian', c:'var(--c-yellow)', bg:'var(--bg-yellow)', hex:'#e65100'},
+  orange: {label:'WARNING', bm:'Amaran',    c:'var(--c-orange)', bg:'var(--bg-orange)', hex:'#bf360c'},
+  red:    {label:'ALERT',   bm:'Bahaya',    c:'var(--c-red)',    bg:'var(--bg-red)',    hex:'#b71c1c'}
+};
+const ACTIONS = {
+  green:  {en:'Normal conditions. No immediate action. Continue to monitor.',
+           bm:'Keadaan biasa. Tiada tindakan segera. Pantau secara berkala.'},
+  yellow: {en:'Rainfall accumulating. Clear your drains. Watch slopes above your house and the river level.',
+           bm:'Hujan sedang terkumpul. Bersihkan longkang. Pantau cerun dan aras sungai.'},
+  orange: {en:'High risk. Move valuables upstairs now. Prepare emergency bag (documents, medicine, clothes). Alert all neighbours.',
+           bm:'Risiko tinggi. Alihkan barang berharga sekarang. Sediakan beg kecemasan. Maklumkan semua jiran.'},
+  red:    {en:'CRITICAL — accumulation matches pre-flood level of 11 Sept 2025. Be ready to evacuate. Call JKKK, JPAM 999, Penampang District Office.',
+           bm:'KRITIKAL — menyamai paras pra-banjir 11 Sept 2025. Bersedia berpindah. Hubungi JKKK, JPAM 999.'}
+};
+const DID = {
+  classify(mmhr){
+    if(mmhr>60) return{label:'Very Heavy',bm:'Sangat Lebat',color:'#b71c1c',bg:'#ffebee'};
+    if(mmhr>30) return{label:'Heavy',     bm:'Lebat',       color:'#e65100',bg:'#fbe9e7'};
+    if(mmhr>10) return{label:'Moderate',  bm:'Sederhana',   color:'#f9a825',bg:'#fff8e1'};
+    if(mmhr>0)  return{label:'Light',     bm:'Ringan',      color:'#388e3c',bg:'#e8f5e9'};
+    return{label:'Dry',bm:'Kering',color:'#9e9588',bg:'var(--bg3)'};
+  }
+};
+// Daily bar color (daily total scale)
+function dayC(mm, forecast){
+  const c = mm>=100?'#b71c1c':mm>=60?'#e65100':mm>=30?'#f9a825':mm>=10?'#1976d2':mm>0?'#64b5f6':'#e0e0e0';
+  return forecast?c+'99':c;
+}
+// Daily tooltip category
+function dayCategory(mm){
+  if(mm>=100) return{label:'Extreme / Melampau',      color:'#b71c1c'};
+  if(mm>=60)  return{label:'Very Heavy / Sangat Lebat',color:'#e65100'};
+  if(mm>=30)  return{label:'Heavy / Lebat',            color:'#f9a825'};
+  if(mm>=10)  return{label:'Moderate / Sederhana',     color:'#1976d2'};
+  if(mm>0)    return{label:'Light / Ringan',           color:'#388e3c'};
+  return{label:'No rain / Tiada hujan',                color:'#9e9588'};
+}
+function getRisk(acc){
+  if(acc>=CFG.T.alert)   return 'red';
+  if(acc>=CFG.T.warning) return 'orange';
+  if(acc>=CFG.T.watch)   return 'yellow';
+  return 'green';
+}
+
+// ══════════════════════════════════════════════════
+// FETCH & PROCESS
+// ══════════════════════════════════════════════════
+async function fetchRain(){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}`
+    +`&hourly=precipitation&daily=precipitation_sum,precipitation_probability_max`
+    +`&past_days=14&forecast_days=7&timezone=Asia%2FKuala_Lumpur&models=best_match`;
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('Open-Meteo: '+r.status);
+  return r.json();
+}
+function processData(raw){
+  const {daily,hourly}=raw;
+  const todayStr=new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Kuala_Lumpur'});
+  const days=daily.time.map((t,i)=>({
+    dateStr:t,
+    date:new Date(t+'T12:00:00+08:00'),
+    label:new Date(t+'T12:00:00+08:00').toLocaleDateString('en-MY',{day:'2-digit',month:'short'}),
+    total:+(daily.precipitation_sum[i]??0).toFixed(1),
+    prob:daily.precipitation_probability_max[i]??0,
+    isForecast:t>todayStr, isToday:t===todayStr
+  }));
+  const tIdx=days.findIndex(d=>d.isToday);
+  const r7 =days.slice(Math.max(0,tIdx-6),tIdx+1).reduce((a,d)=>a+d.total,0);
+  const r7f=days.slice(Math.max(0,tIdx-5),tIdx+2).reduce((a,d)=>a+d.total,0);
+  const now=Date.now();
+  const hrData=hourly.time.map((t,i)=>({t:new Date(t),mm:+(hourly.precipitation[i]??0)}));
+  const last24=hrData.filter(h=>h.t>=new Date(now-24*3600e3)&&h.t<=new Date(now));
+  const peak1h=last24.length?Math.max(...last24.map(h=>h.mm)):0;
+  const next24all=hrData.filter(h=>h.t>new Date(now)&&h.t<=new Date(now+24*3600e3));
+  const next24=next24all.filter((_,i)=>i%3===0).slice(0,8);
+  const next24tot=next24all.reduce((a,h)=>a+h.mm,0);
+  return{days,tIdx,r7,r7f,peak1h,next24,next24tot};
+}
+
+// ══════════════════════════════════════════════════
+// TOOLTIP
+// ══════════════════════════════════════════════════
+let _ttOpen=false;
+function showTT(clientX, clientY, dateStr, val, unit, cat, catColor, sub){
+  document.getElementById('tt-date').textContent=dateStr;
+  document.getElementById('tt-val').textContent=val;
+  document.getElementById('tt-val').style.color=catColor;
+  document.getElementById('tt-unit').textContent=' '+unit;
+  document.getElementById('tt-cat').textContent=cat;
+  document.getElementById('tt-cat').style.color=catColor;
+  document.getElementById('tt-sub').textContent=sub||'';
+  const tt=document.getElementById('tt');
+  tt.style.display='block';
+  _ttOpen=true;
+  // Position above tap/click, clamped to viewport
+  const vw=window.innerWidth;
+  let x=clientX-55, y=clientY-95;
+  if(x<8) x=8;
+  if(x+150>vw-8) x=vw-158;
+  if(y<8) y=clientY+18;
+  tt.style.left=x+'px';
+  tt.style.top=y+'px';
+}
+function hideTT(){ document.getElementById('tt').style.display='none'; _ttOpen=false; }
+document.addEventListener('click',e=>{
+  if(_ttOpen && e.target.id!=='main-chart') hideTT();
+});
+
+// ══════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════
+function setupCanvas(id, dispW, dispH){
+  const el=document.getElementById(id);
+  if(!el) return null;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  el.width=dispW*dpr; el.height=dispH*dpr;
+  el.style.width=dispW+'px'; el.style.height=dispH+'px';
+  const ctx=el.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+function getDataW(n){ return Math.max(n*CP.BAR, 300); }
+
+// ══════════════════════════════════════════════════
+// DRAW Y-AXIS (fixed, both modes)
+// ══════════════════════════════════════════════════
+function drawYAxis(maxV, mode){
+  const ctx = setupCanvas('yaxis-canvas', CP.YW, CP.H);
+  if(!ctx) return;
+
+  const W = CP.YW, H = CP.H, ch = cH();
+
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  // border
+  ctx.strokeStyle='#e8e4dc';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(W-0.5,CP.pT);
+  ctx.lineTo(W-0.5,CP.pT+ch);
+  ctx.stroke();
+
+  // grid labels
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const val = f * maxV;
+    const y = yP(val,maxV);
+
+    ctx.fillStyle='#9e9588';
+    ctx.font=`9px 'Noto Sans Mono',monospace`;
+    ctx.textAlign='right';
+    ctx.fillText(val.toFixed(0), W-5, y+3);
+  });
+
+  // reference labels
+  if(mode==='daily'){
+    CFG.DAILY_REFS.forEach(ref=>{
+      if(ref.mm > maxV) return; // prevent overflow
+      const y = yP(ref.mm,maxV);
+
+      ctx.fillStyle=ref.color;
+      ctx.font=`bold 8px 'Noto Sans',sans-serif`;
+      ctx.textAlign='right';
+      ctx.fillText(ref.mm+'', W-5, y-2);
+    });
+  } else {
+    [CFG.T.watch, CFG.T.warning, CFG.T.alert].forEach(v=>{
+      if(v > maxV) return;
+      const y = yP(v,maxV);
+
+      ctx.fillStyle='#b71c1c';
+      ctx.font=`bold 8px 'Noto Sans Mono',monospace`;
+      ctx.textAlign='right';
+      ctx.fillText(v+'', W-5, y+3);
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════
+// DRAW DAILY CHART
+// ══════════════════════════════════════════════════
+function drawDaily(days, tIdx){
+  const n = days.length;
+  const W = getDataW(n);
+  const ctx = setupCanvas('main-chart', W, CP.H);
+  if(!ctx) return;
+
+  const H = CP.H, pL = CP.DPL, pR = CP.DPR, pT = CP.pT, pB = CP.pB, ch = cH();
+  const cW = W - pL - pR;
+
+  // ✅ FIXED: robust max scale (no NaN, no clipping extremes)
+  const dataMax = Math.max(...days.map(d => d.total), 0);
+  const refMax  = Math.max(...CFG.DAILY_REFS.map(r => r.mm));
+  let maxV = Math.max(dataMax, refMax, 40);
+
+  // add headroom (15%) so bars don’t touch top
+  maxV = Math.ceil(maxV * 1.15);
+
+  drawYAxis(maxV, 'daily');
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const y = yP(f*maxV,maxV);
+    ctx.strokeStyle='#e8e4dc';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(pL,y);
+    ctx.lineTo(W-pR,y);
+    ctx.stroke();
+  });
+
+  // reference lines
+  CFG.DAILY_REFS.forEach(ref=>{
+    const y = yP(ref.mm,maxV);
+    if(y<pT||y>pT+ch) return;
+    ctx.strokeStyle=ref.color+'66';
+    ctx.setLineDash(ref.dash);
+    ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(pL,y);
+    ctx.lineTo(W-pR,y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // bars
+  const bW = cW/n;
+  days.forEach((d,i)=>{
+    const bH = (d.total/maxV)*ch;
+    const x  = pL + i*bW + bW*.1;
+    const w  = bW*.8;
+    const y  = pT + ch - bH;
+
+    ctx.fillStyle = dayC(d.total,d.isForecast);
+    if(bH > 0) ctx.fillRect(x,y,w,bH);
+
+    if(d.isToday){
+      ctx.strokeStyle='#1c1c1c33';
+      ctx.lineWidth=1.5;
+      ctx.strokeRect(x-1,pT,w+2,ch);
+    }
+
+    // labels
+    ctx.save();
+    ctx.translate(x+w/2, H-pB+4);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign='right';
+
+    ctx.font = d.isToday
+      ? `bold 9px 'Noto Sans',sans-serif`
+      : d.isForecast
+      ? `italic 8px 'Noto Sans',sans-serif`
+      : `8px 'Noto Sans',sans-serif`;
+
+    ctx.fillStyle = d.isToday
+      ? '#1c1c1c'
+      : d.isForecast
+      ? '#9e9588'
+      : '#6b6457';
+
+    ctx.fillText(d.isToday?'HARI INI':d.label,0,0);
+    ctx.restore();
+  });
+
+  window._dailyMeta={days,tIdx,maxV,bW,W,pL,pR,n};
+}
+
+// ══════════════════════════════════════════════════
+// DRAW ROLLING CHART
+// ══════════════════════════════════════════════════
+function drawRolling(days, tIdx){
+  const n=days.length;
+  const W=getDataW(n);
+  const ctx=setupCanvas('main-chart',W,CP.H);
+  if(!ctx) return;
+  const H=CP.H, pL=CP.DPL, pR=CP.DPR, pT=CP.pT, pB=CP.pB, ch=cH();
+  const cW=W-pL-pR;
+  const roll=days.map((_,i)=>days.slice(Math.max(0,i-6),i+1).reduce((a,d)=>a+d.total,0));
+  let maxV = Math.max(...roll, CFG.T.maxBar);
+  maxV = Math.ceil(maxV * 1.1); // headroom
+  drawYAxis(maxV,'rolling');
+  ctx.clearRect(0,0,W,H);
+  // Threshold lines
+  [{v:CFG.T.watch,c:'#e65100'},{v:CFG.T.warning,c:'#bf360c'},{v:CFG.T.alert,c:'#b71c1c'}].forEach(td=>{
+    const y=yP(td.v,maxV);
+    ctx.strokeStyle=td.c+'44'; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(W-pR,y); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  // Fill under past
+  ctx.beginPath();
+  roll.slice(0,tIdx+1).forEach((v,i)=>{ const x=pL+(i/(n-1))*cW,y=yP(v,maxV); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.lineTo(pL+(tIdx/(n-1))*cW,pT+ch); ctx.lineTo(pL,pT+ch); ctx.closePath();
+  ctx.fillStyle='#1976d214'; ctx.fill();
+  // Past line
+  ctx.beginPath();
+  roll.slice(0,tIdx+1).forEach((v,i)=>{ const x=pL+(i/(n-1))*cW,y=yP(v,maxV); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle='#1565c0'; ctx.lineWidth=2.5; ctx.stroke();
+  // Forecast dashed
+  ctx.beginPath();
+  roll.slice(tIdx).forEach((v,j)=>{ const i=tIdx+j,x=pL+(i/(n-1))*cW,y=yP(v,maxV); j===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.setLineDash([5,3]); ctx.strokeStyle='#1976d288'; ctx.lineWidth=1.5; ctx.stroke(); ctx.setLineDash([]);
+  // Today dot
+  const xT=pL+(tIdx/(n-1))*cW, yT=yP(roll[tIdx],maxV);
+  const dc=RISK[getRisk(roll[tIdx])].hex;
+  ctx.beginPath(); ctx.arc(xT,yT,6,0,Math.PI*2);
+  ctx.fillStyle=dc; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  // Date labels
+  days.forEach((d,i)=>{
+    const x=pL+(i/(n-1))*cW;
+    ctx.save(); ctx.translate(x,H-pB+4); ctx.rotate(-Math.PI/2); ctx.textAlign='right';
+    ctx.font=d.isToday?`bold 9px 'Noto Sans',sans-serif`:`8px 'Noto Sans',sans-serif`;
+    ctx.fillStyle=d.isToday?'#1c1c1c':'#9e9588';
+    ctx.fillText(d.isToday?'HARI INI':d.label,0,0);
+    ctx.restore();
+  });
+  window._rollMeta={roll,days,tIdx,maxV,W,pL,pR,n,cW};
+}
+
+// ══════════════════════════════════════════════════
+// HIT DETECTION & TOOLTIP EVENTS
+// ══════════════════════════════════════════════════
+let _touchStartX, _touchStartY;
+
+function getCanvasX(clientX){
+  const el=document.getElementById('main-chart');
+  if(!el) return -1;
+  return clientX - el.getBoundingClientRect().left;
+}
+
+function handleDailyHit(clientX, clientY){
+  const m=window._dailyMeta; if(!m) return;
+  const cx=getCanvasX(clientX);
+  const bW=m.bW, pL=m.pL;
+  const idx=Math.floor((cx-pL)/bW);
+  if(idx<0||idx>=m.n) return hideTT();
+  const d=m.days[idx];
+  const cat=dayCategory(d.total);
+  showTT(clientX,clientY,
+    d.label+(d.isToday?' (Hari Ini)':d.isForecast?' (Forecast)':''),
+    d.total+'','mm/day',
+    cat.label, cat.color,
+    d.isForecast&&d.prob>0?`Rain probability: ${d.prob}%`:''
+  );
+}
+
+function handleRollingHit(clientX, clientY){
+  const m=window._rollMeta; if(!m) return;
+  const cx=getCanvasX(clientX);
+  const idx=Math.round((cx-m.pL)/(m.cW/(m.n-1)));
+  if(idx<0||idx>=m.n) return hideTT();
+  const v=m.roll[idx];
+  const r=getRisk(v);
+  const rl=RISK[r];
+  showTT(clientX,clientY,
+    m.days[idx].label+(m.days[idx].isToday?' (Hari Ini)':m.days[idx].isForecast?' (Forecast)':''),
+    v.toFixed(0),'mm (7-day)',
+    rl.label+' / '+rl.bm, rl.hex,
+    '7-day rolling total'
+  );
+}
+
+function bindChartEvents(mode){
+  const c = document.getElementById('main-chart');
+  if(!c) return;
+
+  // Clear old listeners safely
+  c.replaceWith(c.cloneNode(true));
+  const canvas = document.getElementById('main-chart');
+
+  // Mouse
+  canvas.addEventListener('mousemove', e=>{
+    if(mode==='daily') handleDailyHit(e.clientX,e.clientY);
+    else               handleRollingHit(e.clientX,e.clientY);
+  });
+
+  canvas.addEventListener('mouseleave', hideTT);
+
+  // Touch
+  canvas.addEventListener('touchstart', e=>{
+    _touchStartX=e.touches[0].clientX;
+    _touchStartY=e.touches[0].clientY;
+  },{passive:true});
+
+  canvas.addEventListener('touchend', e=>{
+    const dx=Math.abs(e.changedTouches[0].clientX-_touchStartX);
+    const dy=Math.abs(e.changedTouches[0].clientY-_touchStartY);
+
+    if(dx<12 && dy<12){
+      if(mode==='daily') handleDailyHit(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+      else               handleRollingHit(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+    }
+  },{passive:true});
+}
+
+// ══════════════════════════════════════════════════
+// CHART TOGGLE
+// ══════════════════════════════════════════════════
+function switchChart(mode){
+  window._cm=mode;
+  document.getElementById('btn-d')?.classList.toggle('active',mode==='daily');
+  document.getElementById('btn-r')?.classList.toggle('active',mode==='rolling');
+  updateLegend(mode);
+  if(!window._cd) return;
+  hideTT();
+  const{days,tIdx}=window._cd;
+  if(mode==='daily'){
+  drawDaily(days,tIdx);
+  bindChartEvents('daily');
+} else {
+  drawRolling(days,tIdx);
+  bindChartEvents('rolling');
+}
+}
+
+function updateLegend(mode){
+  const el=document.getElementById('chart-legend');
+  if(!el) return;
+  if(mode==='daily'){
+    el.innerHTML=`
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;font-size:.62rem;color:var(--muted)">
+        <span><span style="display:inline-block;width:9px;height:9px;background:#64b5f6;border-radius:2px;vertical-align:middle;margin-right:2px"></span>&lt;10mm</span>
+        <span><span style="display:inline-block;width:9px;height:9px;background:#1976d2;border-radius:2px;vertical-align:middle;margin-right:2px"></span>10–29mm</span>
+        <span><span style="display:inline-block;width:9px;height:9px;background:#f9a825;border-radius:2px;vertical-align:middle;margin-right:2px"></span>30–59mm</span>
+        <span><span style="display:inline-block;width:9px;height:9px;background:#e65100;border-radius:2px;vertical-align:middle;margin-right:2px"></span>60–99mm</span>
+        <span><span style="display:inline-block;width:9px;height:9px;background:#b71c1c;border-radius:2px;vertical-align:middle;margin-right:2px"></span>≥100mm</span>
+        <span style="opacity:.55">□ Forecast</span>
+      </div>
+      <div style="font-size:.63rem;color:var(--subtle);line-height:1.6">
+        Reference lines — <span style="color:#388e3c;font-weight:700">20mm</span> avg rainy day ·
+        <span style="color:#e65100;font-weight:700">60mm</span> MetMalaysia heavy-rain warning ·
+        <span style="color:#b71c1c;font-weight:700">100mm</span> extreme / severe flood risk
+      </div>
+      <div style="font-size:.6rem;color:var(--subtle);margin-top:3px">
+        💡 <strong>Tip:</strong> Tap/hover any bar to see the exact value and category.
+      </div>`;
+  } else {
+    el.innerHTML=`
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:.63rem;color:var(--muted);margin-bottom:4px">
+        <span>— Past observed &nbsp; - - Forecast</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:.63rem">
+        <span style="color:#e65100;font-weight:700">– – 70mm WATCH</span>
+        <span style="color:#bf360c;font-weight:700">– – 100mm WARNING</span>
+        <span style="color:#b71c1c;font-weight:700">– – 120mm ALERT</span>
+      </div>
+      <div style="font-size:.6rem;color:var(--subtle);margin-top:4px">
+        💡 <strong>Tip:</strong> Tap/hover any point on the line to see the 7-day total and risk level.
+      </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════
+function render(p){
+  const{days,tIdx,r7,r7f,peak1h,next24,next24tot}=p;
+  const risk=getRisk(r7), rl=RISK[risk], act=ACTIONS[risk];
+  const pct=Math.min(100,r7/CFG.T.maxBar*100);
+  const today=days[tIdx], yest=tIdx>0?days[tIdx-1]:null;
+  const intC=DID.classify(peak1h);
+  const mo=new Date().getMonth()+1;
+  const isNE=mo>=11||mo<=1;
+  const thNote=isNE?'⚠ NE Monsoon active (Nov–Jan). Treat WARNING level as ALERT.':'Thresholds calibrated for Sep–Oct based on Sept 2025 event data.';
+  const futRisk=getRisk(r7f);
+  const showSig=r7f>r7+3&&futRisk!==risk;
+
+  document.getElementById('app').innerHTML=`
+
+  <div class="risk-card" style="--rc:${rl.c};--rbg:${rl.bg}">
+    <div class="rhead">
+      <span class="rpill" style="border-color:${rl.c};color:${rl.c};background:${rl.bg}">${rl.label}</span>
+      <span class="rbm">${rl.bm}</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:3px">
+      <span class="big-num" style="color:${rl.c}">${r7.toFixed(0)}</span>
+      <span class="big-unit">mm</span>
+    </div>
+    <div class="acc-desc">Jumlah hujan 7 hari lepas (termasuk hari ini)<br>
+      <strong>7-day rolling rainfall total</strong> — primary flood risk indicator</div>
+    <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${rl.c}"></div></div>
+    <div class="tick-row">
+      <span class="tick" style="left:0%;color:var(--subtle)">0</span>
+      <span class="tick" style="left:${CFG.T.watch/CFG.T.maxBar*100}%;color:var(--c-yellow)">${CFG.T.watch}</span>
+      <span class="tick" style="left:${CFG.T.warning/CFG.T.maxBar*100}%;color:var(--c-orange)">${CFG.T.warning}</span>
+      <span class="tick" style="left:${CFG.T.alert/CFG.T.maxBar*100}%;color:var(--c-red)">${CFG.T.alert}</span>
+      <span class="tick" style="left:100%;color:var(--subtle);transform:translateX(-100%)">${CFG.T.maxBar}mm</span>
+    </div>
+    <div class="act-box" style="background:${rl.bg}">
+      <div class="act-title" style="color:${rl.c}">Tindakan / Action</div>
+      <div class="act-en">${act.en}</div>
+      <div class="act-bm">${act.bm}</div>
+    </div>
+  </div>
+
+  ${showSig?`<div class="sig">
+    <div class="sig-title">📈 Forecast Signal — Isyarat Ramalan</div>
+    Including tomorrow's forecast, 7-day total rises to
+    <strong style="color:${RISK[futRisk].c}">${r7f.toFixed(0)}mm</strong>
+    → risk moves to <strong style="color:${RISK[futRisk].c}">${RISK[futRisk].label} / ${RISK[futRisk].bm}</strong>.
+    Begin preparing now.
+  </div>`:''}
+
+  <div class="stats-g">
+    <div class="stat"><div class="sval">${(today?.total??0).toFixed(0)}</div><div class="sunit">mm</div>
+      <div class="slbl">Hari Ini<br>Today's Rain</div><div class="snote">Since midnight MYT</div></div>
+    <div class="stat"><div class="sval">${next24tot.toFixed(0)}</div><div class="sunit">mm</div>
+      <div class="slbl">Ramalan 24j<br>Next 24h</div><div class="snote">Forecast total</div></div>
+    <div class="stat"><div class="sval">${(yest?.total??0).toFixed(0)}</div><div class="sunit">mm</div>
+      <div class="slbl">Semalam<br>Yesterday</div><div class="snote">Full day total</div></div>
+  </div>
+
+  <div class="int-row">
+    <div>
+      <div class="int-lbl">Intensiti Puncak (24j) / Peak 1-hr Intensity</div>
+      <div><span class="int-val" style="color:${intC.color}">${peak1h.toFixed(1)}</span>
+        <span class="int-unit"> mm/hr (last 24h)</span></div>
+    </div>
+    <div class="int-right">
+      <div class="int-cat" style="color:${intC.color}">${intC.label} / ${intC.bm}</div>
+      <div class="int-note">DID official hourly classification</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:-4px;padding:10px 14px">
+    <div style="font-size:.67rem;color:var(--muted);font-weight:700;margin-bottom:5px">DID Rainfall Intensity (mm/hour)</div>
+    <div class="did-legend">
+      <span class="did-badge" style="background:#388e3c">Ringan/Light: 1–10</span>
+      <span class="did-badge" style="background:#f9a825;color:#1c1c1c">Sederhana/Moderate: 11–30</span>
+      <span class="did-badge" style="background:#e65100">Lebat/Heavy: 31–60</span>
+      <span class="did-badge" style="background:#b71c1c">Sangat Lebat/Very Heavy: >60</span>
+    </div>
+  </div>
+
+  <!-- NEXT 24H — above chart -->
+  <div class="card">
+    <div class="card-title">Ramalan 24 Jam / Next 24 Hours
+      <span class="card-sub">Kadar sejam / Hourly rate (mm/hr)</span>
+    </div>
+    <div class="g24">
+      ${next24.map(h=>{const c=DID.classify(h.mm);return`<div class="fc">
+        <div class="fc-t">${h.t.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'})}</div>
+        <div class="fc-v">${h.mm.toFixed(1)}</div><div class="fc-u">mm/hr</div>
+        <div class="fc-b" style="background:${c.color}"></div>
+        <div class="fc-c" style="color:${c.color}">${c.label}</div>
+      </div>`;}).join('')}
+    </div>
+  </div>
+
+  <!-- CHART — sticky y-axis + scrolling data -->
+  <div class="card">
+    <div class="card-title">Graf Hujan / Rainfall Chart
+      <span class="card-sub">14 hari lepas + 7 ramalan · Swipe ←→</span>
+    </div>
+    <div class="toggle-row">
+      <button class="tbtn active" id="btn-d" onclick="switchChart('daily')">Harian / Daily Total</button>
+      <button class="tbtn" id="btn-r" onclick="switchChart('rolling')">7-Hari Rolling</button>
+    </div>
+    <!-- Two-canvas chart: sticky y-axis + scrolling data -->
+    <div class="chart-wrap" id="chart-outer">
+      <div class="yaxis-sticky">
+        <canvas id="yaxis-canvas" style="display:block"></canvas>
+      </div>
+      <canvas id="main-chart" style="display:block;flex-shrink:0"></canvas>
+    </div>
+    <div id="chart-legend" style="margin-top:8px"></div>
+  </div>
+
+  <!-- WATER LEVEL -->
+  <div class="card">
+    <div class="card-title">Aras Air Sungai / River Water Level</div>
+    <div style="font-size:.75rem;color:var(--muted);padding:7px 9px;background:var(--bg3);border-radius:6px;margin-bottom:10px;line-height:1.6">
+      ⚠ River level cannot be fetched automatically. Check manually — updated every 15 minutes.
+    </div>
+    <div class="wl-row">
+      <div><div class="wl-name">Sg. Moyog / Sg. Penampang</div>
+        <div class="wl-sub">DID Malaysia — National Flood Portal (Sabah)</div></div>
+      <a class="wl-link" href="https://publicinfobanjir.water.gov.my/aras-air/data-paras-air/?state=SAB&lang=en" target="_blank">Check →</a>
+    </div>
+    <div class="wl-row">
+      <div><div class="wl-name">Daerah Penampang (District 13)</div>
+        <div class="wl-sub">JPS Sabah — Sabah-specific, more detailed</div></div>
+      <a class="wl-link" href="https://infobanjir.sabah.gov.my/WaterLevel/District/13" target="_blank">Check →</a>
+    </div>
+    <div style="margin-top:9px;font-size:.7rem;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--text)">DID Alert Levels:</strong>&nbsp;
+      <strong>Normal</strong> — tiada kebimbangan &nbsp;|&nbsp;
+      <strong style="color:var(--c-yellow)">Waspada</strong> — monitor closely &nbsp;|&nbsp;
+      <strong style="color:var(--c-orange)">Amaran</strong> — flooding possible &nbsp;|&nbsp;
+      <strong style="color:var(--c-red)">Bahaya</strong> — evacuate if directed
+    </div>
+  </div>
+
+  <!-- THRESHOLDS -->
+  <div class="card">
+    <div class="card-title">Paras Risiko 7-Hari / 7-Day Risk Thresholds</div>
+    <div style="font-size:.7rem;padding:7px 9px;border-radius:6px;margin-bottom:9px;line-height:1.6;
+                background:${isNE?'var(--bg-yellow)':'var(--bg-green)'};color:${isNE?'var(--c-yellow)':'var(--c-green)'}">
+      ${thNote}
+    </div>
+    ${[
+      {r:'green', range:`< ${CFG.T.watch}mm`,                 en:'Below Sept historical median (GPM IMERG 2001–2024)',       bm:'Di bawah median September'},
+      {r:'yellow',range:`${CFG.T.watch}–${CFG.T.warning}mm`,  en:'Elevated — approaching levels seen in flood years',         bm:'Mendekati paras tahun banjir'},
+      {r:'orange',range:`${CFG.T.warning}–${CFG.T.alert}mm`,  en:'High — prepare for possible flooding',                      bm:'Tinggi — bersedia untuk banjir'},
+      {r:'red',   range:`> ${CFG.T.alert}mm`,                 en:'Critical — approaching 11 Sept 2025 trigger level (134mm)', bm:'Kritikal — mendekati pencetus banjir Sept 2025'}
+    ].map(x=>`<div class="th-row">
+      <span class="th-pill" style="background:${RISK[x.r].bg};color:${RISK[x.r].c}">${RISK[x.r].label}<br><small>${RISK[x.r].bm}</small></span>
+      <div><div class="th-range" style="color:${RISK[x.r].c}">${x.range}</div>
+        <div class="th-en">${x.en}</div><div class="th-bm">${x.bm}</div></div>
+    </div>`).join('')}
+    <div style="margin-top:9px;font-size:.7rem;color:var(--subtle);line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
+      <strong style="color:var(--text)">Why 7-day, not daily?</strong> The 11 Sept 2025 mudflood occurred on a day with only 14.7mm of rain — entirely ordinary. The disaster was triggered by 134mm accumulated over the prior 7 days saturating the slopes. A daily threshold alarm would have shown zero risk that morning.
+    </div>
+  </div>
+
+  <button class="refresh" onclick="init()">↻ Kemaskini / Refresh</button>
+
+  <!-- METMALAYSIA -->
+  <div class="card">
+    <div class="card-title">⚠ MetMalaysia Warnings — Amaran Cuaca</div>
+    <div style="font-size:.78rem;color:var(--muted);line-height:1.75;margin-bottom:10px">
+      MetMalaysia issues storm and heavy rain warnings for Sabah zones including Pantai Barat Sabah.
+    </div>
+    <a href="https://www.met.gov.my/data/AmaranRibutPetir.jpg" target="_blank"
+       style="display:block;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;
+              font-size:.8rem;font-weight:700;color:var(--text);text-decoration:none;margin-bottom:7px;text-align:center">
+      Thunderstorm warnings →</a>
+    <a href="https://www.met.gov.my/data/AmaranHujanLebat.jpg" target="_blank"
+       style="display:block;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;
+              font-size:.8rem;font-weight:700;color:var(--text);text-decoration:none;text-align:center">
+      Continous rain warnings →</a>
+  </div>
+
+  <div class="caveat">
+    <strong>Data:</strong> Open-Meteo (ERA5/ECMWF), ~11km resolution ·
+    <strong>Location:</strong> ${CFG.lat}°N, ${CFG.lon}°E ·
+    <strong>7-day thresholds:</strong> GPM IMERG analysis of 11 Sept 2025 Penampang flood event ·
+    <strong>Daily refs:</strong> Sabah avg rainy day 10–20mm (MetMalaysia/NAHRIM); MetMY heavy rain warning 60mm/24h; convective flash-flood trigger 60mm/2–4hr (DID 2019) ·
+    <strong>Not a substitute for official warnings.</strong>
+    Emergency: <strong>JPAM 999 · JKKK · Pejabat Daerah Penampang</strong>
+  </div>
+  `;
+
+  window._cd={days,tIdx};
+  window._cm='daily';
+  requestAnimationFrame(()=>{
+  drawDaily(days,tIdx);
+  updateLegend('daily');
+  bindChartEvents('daily'); // ✅ only here
+});
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+async function init(){
+  document.getElementById('app').innerHTML=`
+    <div class="loading"><div class="spinner"></div>
+      <p style="color:var(--muted);font-size:.85rem">Memuatkan data…<br><small>Fetching rainfall data…</small></p>
+    </div>`;
+  try{
+    const raw=await fetchRain();
+    const p=processData(raw);
+    const now=new Date();
+    document.getElementById('t-time').textContent=now.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'});
+    document.getElementById('t-date').textContent=now.toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Kuala_Lumpur'});
+    render(p);
+  }catch(e){
+    document.getElementById('app').innerHTML=`
+      <div class="card" style="text-align:center;padding:30px">
+        <p style="color:var(--c-orange);font-size:1rem;margin-bottom:8px">⚠ Gagal memuatkan data</p>
+        <p style="color:var(--muted);font-size:.8rem;margin-bottom:14px">Semak sambungan internet.<br>${e.message}</p>
+        <button class="refresh" style="width:auto;padding:8px 24px" onclick="init()">Cuba Lagi</button>
+      </div>`;
+  }
+}
+
+init();
+setInterval(init,30*60*1000);
+window.addEventListener('resize',()=>{
+  if(!window._cd) return;
+  const{days,tIdx}=window._cd;
+  hideTT();
+  if(window._cm==='daily') drawDaily(days,tIdx);
+  else                     drawRolling(days,tIdx);
+});
+</script>
+</body>
+</html>
