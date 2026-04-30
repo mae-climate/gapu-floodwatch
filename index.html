@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FloodWatch — Kg. Sarapung-Kolopis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a1a0d;
+    --bg2: #0f2212;
+    --bg3: #162d19;
+    --green:   #4caf6e;
+    --yellow:  #f5c842;
+    --orange:  #f07d2a;
+    --red:     #e03c3c;
+    --text:    #d8edd9;
+    --muted:   #6b8f70;
+    --border:  #1e3a22;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-title { line-height: 1; }
+  .header-title h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: var(--green);
+  }
+  .header-title p {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .header-time {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .dot-live {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 4px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Risk gauge — hero element */
+  .risk-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .risk-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--risk-color, var(--green));
+    transition: background 0.6s ease;
+  }
+  .risk-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .risk-badge {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: var(--risk-color, var(--green));
+    color: #000;
+    transition: background 0.6s ease;
+  }
+  .risk-label-bm {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* Big number */
+  .accumulation-display {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .acc-number {
+    font-family: var(--font-display);
+    font-size: 4.5rem;
+    line-height: 1;
+    color: var(--risk-color, var(--green));
+    transition: color 0.6s ease;
+    letter-spacing: -1px;
+  }
+  .acc-unit {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--muted);
+  }
+  .acc-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    background: var(--bg3);
+    border-radius: 6px;
+    height: 8px;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: var(--risk-color, var(--green));
+    transition: width 0.8s ease, background 0.6s ease;
+    max-width: 100%;
+  }
+  .threshold-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .threshold-tick { position: relative; }
+
+  /* Action box */
+  .action-box {
+    background: var(--bg3);
+    border-left: 3px solid var(--risk-color, var(--green));
+    border-radius: 0 8px 8px 0;
+    padding: 12px 14px;
+    transition: border-color 0.6s ease;
+  }
+  .action-box h3 {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .action-box p {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .action-bm {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* Section headers */
+  .section-title {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Rain chart */
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-wrap { overflow-x: auto; }
+  canvas { display: block; }
+
+  /* 24h forecast */
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .forecast-cell {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .fc-time { font-size: 0.62rem; color: var(--muted); margin-bottom: 4px; font-family: var(--font-mono); }
+  .fc-mm { font-family: var(--font-display); font-size: 1.4rem; color: var(--text); }
+  .fc-unit { font-size: 0.55rem; color: var(--muted); }
+  .fc-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 6px;
+    transition: background 0.4s;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-cell {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-val { font-family: var(--font-display); font-size: 1.5rem; color: var(--text); line-height: 1; }
+  .stat-lbl { font-size: 0.58rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    font-size: 0.62rem;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  .footer strong { color: var(--text); font-weight: 600; }
+
+  /* Loading / error */
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: var(--orange); font-size: 0.85rem; text-align: center; padding: 20px; }
+
+  /* Forecast toggle */
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .toggle-btn {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  .toggle-btn.active {
+    background: var(--bg2);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .refresh-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .refresh-btn:hover { border-color: var(--green); color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <h1>FloodWatch</h1>
+    <p>Kg. Sarapung-Kolopis · Penampang</p>
+  </div>
+  <div class="header-time">
+    <span class="dot-live"></span><span id="live-label">LIVE</span><br>
+    <span id="last-updated">—</span><br>
+    <span id="current-date">—</span>
+  </div>
+</div>
+
+<div id="app">
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Memuatkan data hujan…</p>
+  </div>
+</div>
+
+<script>
+// ── Configuration ──────────────────────────────────────────
+const CONFIG = {
+  lat: 5.895,
+  lon: 116.110,
+  name: 'Kg. Sarapung-Kolopis',
+  // Thresholds derived from Sept 2025 event analysis (NB02)
+  // 7-day rolling accumulation (mm)
+  thresholds: {
+    watch:   70,   // approaching historical median for September
+    warning: 100,  // elevated — approaching flood years
+    alert:   120,  // critical — approaching Sept 2025 pre-flood level (134mm)
+    max_display: 200
+  }
+};
+
+const RISK_LEVELS = {
+  green:  { label: 'NORMAL',   labelBM: 'Biasa',    color: '#4caf6e', textColor: '#000' },
+  yellow: { label: 'WATCH',    labelBM: 'Perhatian', color: '#f5c842', textColor: '#000' },
+  orange: { label: 'WARNING',  labelBM: 'Amaran',   color: '#f07d2a', textColor: '#000' },
+  red:    { label: 'ALERT',    labelBM: 'Bahaya',   color: '#e03c3c', textColor: '#fff' }
+};
+
+const ACTIONS = {
+  green: {
+    en: 'Conditions are normal. No immediate action needed. Check again tomorrow.',
+    bm: 'Keadaan biasa. Tiada tindakan segera diperlukan.'
+  },
+  yellow: {
+    en: 'Rainfall accumulating. Clear your drains. Watch the river level. Keep valuables accessible.',
+    bm: 'Hujan sedang terkumpul. Bersihkan longkang. Pantau aras sungai.'
+  },
+  orange: {
+    en: 'High risk. Move valuables to higher ground. Prepare emergency kit. Alert your neighbours now.',
+    bm: 'Risiko tinggi. Alihkan barang berharga ke tempat lebih tinggi. Sediakan beg kecemasan. Maklumkan jiran sekarang.'
+  },
+  red: {
+    en: 'CRITICAL — conditions match pre-flood levels of Sept 2025. Be ready to evacuate immediately. Contact JKKK and JPAM.',
+    bm: 'KRITIKAL — keadaan menyamai tahap sebelum banjir Sept 2025. Bersedia untuk berpindah segera. Hubungi JKKK dan JPAM.'
+  }
+};
+
+// ── Fetch data from Open-Meteo ────────────────────────────
+async function fetchRainfall() {
+  const url = `https://api.open-meteo.com/v1/forecast?` +
+    `latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
+    `&hourly=precipitation` +
+    `&daily=precipitation_sum,precipitation_probability_max` +
+    `&past_days=14&forecast_days=7` +
+    `&timezone=Asia%2FKuala_Lumpur` +
+    `&models=best_match`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+// ── Process data ──────────────────────────────────────────
+function processData(data) {
+  const { daily, hourly } = data;
+
+  // Daily totals
+  const days = daily.time.map((t, i) => ({
+    date: new Date(t + 'T00:00:00+08:00'),
+    dateStr: t,
+    total: daily.precipitation_sum[i] ?? 0,
+    prob: daily.precipitation_probability_max[i] ?? 0,
+    isForecast: new Date(t + 'T23:59:00+08:00') > new Date()
+  }));
+
+  // Today index
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Kuala_Lumpur' });
+  const todayIdx = days.findIndex(d => d.dateStr === todayStr);
+
+  // 7-day rolling accumulation ending today
+  const start7 = Math.max(0, todayIdx - 6);
+  const rolling7 = days.slice(start7, todayIdx + 1).reduce((s, d) => s + d.total, 0);
+
+  // 7-day rolling ending tomorrow (forecast signal)
+  const start7f = Math.max(0, todayIdx - 5);
+  const rolling7f = days.slice(start7f, todayIdx + 2).reduce((s, d) => s + d.total, 0);
+
+  // Next 24h hourly
+  const nowMs = Date.now();
+  const next24h = hourly.time
+    .map((t, i) => ({ time: new Date(t), mm: hourly.precipitation[i] ?? 0 }))
+    .filter(h => h.time >= new Date(nowMs) && h.time < new Date(nowMs + 24 * 3600 * 1000))
+    .filter((_, i) => i % 3 === 0); // every 3h
+
+  const next24total = hourly.time
+    .map((t, i) => ({ time: new Date(t), mm: hourly.precipitation[i] ?? 0 }))
+    .filter(h => h.time >= new Date(nowMs) && h.time < new Date(nowMs + 24 * 3600 * 1000))
+    .reduce((s, h) => s + h.mm, 0);
+
+  return { days, todayIdx, rolling7, rolling7f, next24h, next24total, todayStr };
+}
+
+// ── Risk level ────────────────────────────────────────────
+function getRiskLevel(acc) {
+  const t = CONFIG.thresholds;
+  if (acc >= t.alert)   return 'red';
+  if (acc >= t.warning) return 'orange';
+  if (acc >= t.watch)   return 'yellow';
+  return 'green';
+}
+
+function getRainColor(mm) {
+  if (mm >= 30) return '#e03c3c';
+  if (mm >= 15) return '#f07d2a';
+  if (mm >= 5)  return '#f5c842';
+  if (mm > 0)   return '#4caf6e';
+  return '#1e3a22';
+}
+
+// ── Render ────────────────────────────────────────────────
+function render(processed) {
+  const { days, todayIdx, rolling7, rolling7f, next24h, next24total } = processed;
+  const risk = getRiskLevel(rolling7);
+  const rl = RISK_LEVELS[risk];
+  const action = ACTIONS[risk];
+  const t = CONFIG.thresholds;
+  const pct = Math.min(100, (rolling7 / t.max_display) * 100);
+
+  const todayDay = days[todayIdx];
+  const yesterdayDay = todayIdx > 0 ? days[todayIdx - 1] : null;
+
+  document.getElementById('app').innerHTML = `
+    <!-- Risk Card -->
+    <div class="risk-card" id="risk-card" style="--risk-color:${rl.color}">
+      <div class="risk-label-row">
+        <span class="risk-badge" style="background:${rl.color};color:${rl.textColor}">${rl.label}</span>
+        <span class="risk-label-bm">${rl.labelBM}</span>
+      </div>
+      <div class="accumulation-display">
+        <span class="acc-number" id="acc-num">${rolling7.toFixed(0)}</span>
+        <span class="acc-unit">mm</span>
+      </div>
+      <div class="acc-label">7-day rolling rainfall total</div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${pct}%;background:${rl.color}"></div>
+      </div>
+      <div class="threshold-ticks">
+        <span>0</span>
+        <span style="color:#f5c842">${t.watch}</span>
+        <span style="color:#f07d2a">${t.warning}</span>
+        <span style="color:#e03c3c">${t.alert}</span>
+        <span>${t.max_display}mm</span>
+      </div>
+      <div class="action-box" style="border-color:${rl.color}">
+        <h3>Tindakan / Action</h3>
+        <p>${action.en}</p>
+        <p class="action-bm">${action.bm}</p>
+      </div>
+    </div>
+
+    <!-- Forecast signal -->
+    ${rolling7f > rolling7 ? `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:0.78rem;line-height:1.6;">
+      <span style="color:var(--muted);font-size:0.62rem;text-transform:uppercase;letter-spacing:1px;">24h Forecast Signal</span><br>
+      Including tomorrow's forecast rainfall, 7-day total rises to 
+      <strong style="color:${RISK_LEVELS[getRiskLevel(rolling7f)].color}">${rolling7f.toFixed(0)}mm</strong>
+      ${getRiskLevel(rolling7f) !== risk ? `→ risk level moves to <strong style="color:${RISK_LEVELS[getRiskLevel(rolling7f)].color}">${RISK_LEVELS[getRiskLevel(rolling7f)].label}</strong>` : ''}
+    </div>` : ''}
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-cell">
+        <div class="stat-val">${(todayDay?.total ?? 0).toFixed(0)}</div>
+        <div class="stat-lbl">Today (mm)</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">${next24total.toFixed(0)}</div>
+        <div class="stat-lbl">Next 24h</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">${(yesterdayDay?.total ?? 0).toFixed(0)}</div>
+        <div class="stat-lbl">Yesterday</div>
+      </div>
+    </div>
+
+    <!-- 14-day chart -->
+    <div class="chart-card">
+      <div class="section-title">14-Day Rainfall + 7-Day Forecast</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="showChart('bar')">Daily (mm)</button>
+        <button class="toggle-btn" onclick="showChart('rolling')">7-Day Rolling</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="main-chart" width="440" height="160"></canvas>
+      </div>
+      <div id="chart-legend" style="display:flex;gap:16px;margin-top:8px;font-size:0.6rem;color:var(--muted)">
+        <span><span style="display:inline-block;width:10px;height:10px;background:#4caf6e;border-radius:2px;margin-right:4px"></span>Past rain</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#2a5c35;border-radius:2px;margin-right:4px"></span>Forecast</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#e03c3c;border-radius:2px;margin-right:4px"></span>High rain</span>
+      </div>
+    </div>
+
+    <!-- Next 24h -->
+    <div class="section-title">Next 24 Hours</div>
+    <div class="forecast-grid">
+      ${next24h.slice(0, 8).map(h => `
+        <div class="forecast-cell">
+          <div class="fc-time">${h.time.toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'})}</div>
+          <div class="fc-mm">${h.mm.toFixed(1)}</div>
+          <div class="fc-unit">mm/hr</div>
+          <div class="fc-bar" style="background:${getRainColor(h.mm * 3)}"></div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Threshold explanation -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="section-title">Risk Thresholds — Based on Sept 2025 Analysis</div>
+      ${[
+        { level: 'NORMAL',  color: '#4caf6e', range: `< ${t.watch}mm`,          en: 'Below historical median for September',              bm: 'Di bawah median September' },
+        { level: 'WATCH',   color: '#f5c842', range: `${t.watch}–${t.warning}mm`, en: 'Approaching levels seen in high-rainfall years',      bm: 'Mendekati paras tahun hujan tinggi' },
+        { level: 'WARNING', color: '#f07d2a', range: `${t.warning}–${t.alert}mm`, en: 'High accumulation — prepare for possible flooding',    bm: 'Terkumpulan tinggi — bersedia untuk banjir' },
+        { level: 'ALERT',   color: '#e03c3c', range: `> ${t.alert}mm`,           en: 'Approaching Sept 2025 pre-flood level (134mm in 7 days)', bm: 'Mendekati paras pra-banjir Sept 2025' }
+      ].map(r => `
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:1px;color:${r.color};min-width:68px">${r.level}</span>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.72rem;color:${r.color}">${r.range}</div>
+            <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">${r.en}</div>
+            <div style="font-size:0.65rem;color:var(--muted);font-style:italic">${r.bm}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <button class="refresh-btn" onclick="init()">↻ Refresh Data</button>
+
+    <div class="footer">
+      <strong>Data:</strong> Open-Meteo (ERA5/ECMWF), ~11km resolution · 
+      <strong>Location:</strong> ${CONFIG.lat}°N, ${CONFIG.lon}°E ·
+      <strong>Thresholds:</strong> Derived from GPM IMERG analysis of the Sept 2025 Penampang flood event ·
+      <strong>Caveat:</strong> Forecast accuracy decreases beyond 48h. This tool monitors antecedent accumulation — not a substitute for official JUPEM/JMG warnings. Always heed instructions from JKKK, JPAM, and local authorities.
+    </div>
+  `;
+
+  // Draw chart
+  window._chartData = { days, todayIdx };
+  drawBarChart(days, todayIdx);
+}
+
+// ── Chart drawing ─────────────────────────────────────────
+let currentChartMode = 'bar';
+function showChart(mode) {
+  currentChartMode = mode;
+  document.querySelectorAll('.toggle-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && mode === 'bar') || (i === 1 && mode === 'rolling'));
+  });
+  const { days, todayIdx } = window._chartData;
+  if (mode === 'bar') drawBarChart(days, todayIdx);
+  else drawRollingChart(days, todayIdx);
+}
+
+function drawBarChart(days, todayIdx) {
+  const canvas = document.getElementById('main-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const padL = 30, padR = 8, padT = 10, padB = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const maxVal = Math.max(...days.map(d => d.total), 30);
+  const barW = chartW / days.length;
+
+  // Grid lines
+  ctx.strokeStyle = '#1e3a22';
+  ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    const y = padT + chartH * (1 - f);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#4a6b50';
+    ctx.font = '9px IBM Plex Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText((maxVal * f).toFixed(0), padL - 3, y + 3);
+  });
+
+  days.forEach((d, i) => {
+    const barH = (d.total / maxVal) * chartH;
+    const x = padL + i * barW + barW * 0.1;
+    const w = barW * 0.8;
+    const y = padT + chartH - barH;
+
+    // Color: red if high, green if past, dark green if forecast
+    let fillColor = d.isForecast ? '#2a5c35' : getRainColor(d.total);
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(x, y, w, barH);
+
+    // Today marker
+    if (i === todayIdx) {
+      ctx.strokeStyle = '#ffffff33';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 1, padT, w + 2, chartH);
+    }
+
+    // Date label every 3 days
+    if (i % 3 === 0 || i === todayIdx) {
+      ctx.fillStyle = i === todayIdx ? '#d8edd9' : '#4a6b50';
+      ctx.font = i === todayIdx ? 'bold 8px IBM Plex Mono' : '8px IBM Plex Mono';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        i === todayIdx ? 'TODAY' : d.date.toLocaleDateString('en-MY', {day:'2-digit',month:'short'}),
+        x + w / 2, H - padB + 10
+      );
+    }
+  });
+
+  // 7-day threshold line
+  const threshY = padT + chartH * (1 - CONFIG.thresholds.alert / maxVal);
+  if (threshY >= padT && threshY <= padT + chartH) {
+    ctx.strokeStyle = '#e03c3c55';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, threshY); ctx.lineTo(W - padR, threshY); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawRollingChart(days, todayIdx) {
+  const canvas = document.getElementById('main-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const padL = 36, padR = 8, padT = 10, padB = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  ctx.clearRect(0, 0, W, H);
+
+  // Compute rolling 7-day sums for each day
+  const rolling = days.map((_, i) => {
+    const start = Math.max(0, i - 6);
+    return days.slice(start, i + 1).reduce((s, d) => s + d.total, 0);
+  });
+
+  const maxVal = Math.max(...rolling, CONFIG.thresholds.max_display);
+
+  // Grid + threshold lines
+  const thresholds = [
+    { val: CONFIG.thresholds.watch,   color: '#f5c842' },
+    { val: CONFIG.thresholds.warning, color: '#f07d2a' },
+    { val: CONFIG.thresholds.alert,   color: '#e03c3c' },
+  ];
+
+  thresholds.forEach(t => {
+    const y = padT + chartH * (1 - t.val / maxVal);
+    ctx.strokeStyle = t.color + '44';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = t.color;
+    ctx.font = '8px IBM Plex Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(t.val, padL - 3, y + 3);
+  });
+
+  // Line
+  ctx.beginPath();
+  rolling.forEach((val, i) => {
+    const x = padL + (i / (days.length - 1)) * chartW;
+    const y = padT + chartH * (1 - val / maxVal);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#4caf6e';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Fill under line (past only)
+  ctx.beginPath();
+  rolling.slice(0, todayIdx + 1).forEach((val, i) => {
+    const x = padL + (i / (days.length - 1)) * chartW;
+    const y = padT + chartH * (1 - val / maxVal);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  const xToday = padL + (todayIdx / (days.length - 1)) * chartW;
+  ctx.lineTo(xToday, padT + chartH);
+  ctx.lineTo(padL, padT + chartH);
+  ctx.closePath();
+  ctx.fillStyle = '#4caf6e18';
+  ctx.fill();
+
+  // Today dot
+  const xT = padL + (todayIdx / (days.length - 1)) * chartW;
+  const yT = padT + chartH * (1 - rolling[todayIdx] / maxVal);
+  ctx.beginPath();
+  ctx.arc(xT, yT, 4, 0, Math.PI * 2);
+  ctx.fillStyle = RISK_LEVELS[getRiskLevel(rolling[todayIdx])].color;
+  ctx.fill();
+
+  // X axis labels
+  days.forEach((d, i) => {
+    if (i % 4 === 0 || i === todayIdx) {
+      const x = padL + (i / (days.length - 1)) * chartW;
+      ctx.fillStyle = i === todayIdx ? '#d8edd9' : '#4a6b50';
+      ctx.font = i === todayIdx ? 'bold 8px IBM Plex Mono' : '8px IBM Plex Mono';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        i === todayIdx ? 'TODAY' : d.date.toLocaleDateString('en-MY', {day:'2-digit',month:'short'}),
+        x, H - padB + 10
+      );
+    }
+  });
+}
+
+// ── Update time display ───────────────────────────────────
+function updateTime() {
+  const now = new Date();
+  document.getElementById('last-updated').textContent =
+    now.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kuala_Lumpur' });
+  document.getElementById('current-date').textContent =
+    now.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
+}
+
+// ── Main init ─────────────────────────────────────────────
+async function init() {
+  document.getElementById('app').innerHTML = `
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <p style="font-size:0.8rem">Mengambil data cuaca…<br><span style="font-size:0.65rem;color:#4a6b50">Fetching rainfall data…</span></p>
+    </div>`;
+
+  try {
+    const data = await fetchRainfall();
+    const processed = processData(data);
+    updateTime();
+    render(processed);
+    // Redraw chart on resize
+    window.addEventListener('resize', () => {
+      if (window._chartData) {
+        const { days, todayIdx } = window._chartData;
+        if (currentChartMode === 'bar') drawBarChart(days, todayIdx);
+        else drawRollingChart(days, todayIdx);
+      }
+    });
+  } catch (err) {
+    document.getElementById('app').innerHTML = `
+      <div class="error-msg">
+        <p>⚠ Gagal memuatkan data</p>
+        <p style="margin-top:8px;font-size:0.72rem;color:var(--muted)">Check your internet connection and try again.<br>${err.message}</p>
+        <button class="refresh-btn" style="margin-top:16px;width:auto;padding:8px 20px" onclick="init()">Try Again</button>
+      </div>`;
+  }
+}
+
+init();
+// Auto-refresh every 30 minutes
+setInterval(init, 30 * 60 * 1000);
+</script>
+</body>
+</html>
